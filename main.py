@@ -6,6 +6,7 @@ import time
 dali = Dali(1, 2)
 
 
+
 def mqtt_callback(topic, msg, retained):
     if topic.startswith(b'dali/'):
         dali.receive_from_mqtt(topic, msg)
