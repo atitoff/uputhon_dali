@@ -3,7 +3,7 @@ from my.mqtt import MQTT, MqttLog
 from my.dali import Dali
 import time
 
-dali = Dali(1, 2)
+dali = Dali(1, 2, topic_index=b'ha')
 
 
 
@@ -17,6 +17,7 @@ async def mqtt_conn_handler(client):
     await client.subscribe('dali/#', 1)
 
 mqtt = MQTT(host='192.168.1.197', user='alex', password='bh0020', subs_cb=mqtt_callback, conn_handler=mqtt_conn_handler, debug=True)
+# mqtt = MQTT(host='192.168.1.72', user='alex', password='bh0020', subs_cb=mqtt_callback, conn_handler=mqtt_conn_handler, debug=True)
 
 log = MqttLog(mqtt.client)
 
@@ -24,11 +25,12 @@ async def main():
     await mqtt.connect()
     await dali.run(mqtt.client)
     await asyncio.sleep(1)
-    t = time.time()
-    await mqtt.client.publish('dali/test', '222', qos=0)
-    print(t)
+
     while True:
-        await asyncio.sleep(10)
+        t = time.time()
+        await mqtt.client.publish('dali/ha/set_level/32', b'\23', qos=0)
+        print(t)
+        await asyncio.sleep(2)
 
 
 

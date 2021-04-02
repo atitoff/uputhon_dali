@@ -3,9 +3,10 @@ import time
 
 
 class Dali:
-    def __init__(self, port_in: int, port_out: int):
+    def __init__(self, port_in: int, port_out: int, topic_index):
         self._port_in = port_in
         self._port_out = port_out
+        self.topic_index = topic_index
         self.mqtt_client = None  # MQTT client
         self._receive_list = []
         self._receive_queue = asyncio.Event()
@@ -27,6 +28,7 @@ class Dali:
                 self._receive_queue.clear()
             print(time.time())
             print('awaited receive', d, '|  len', len(self._receive_list))
+            await DaliCommand.parse(d)
             await asyncio.sleep(2)
 
 
@@ -105,22 +107,27 @@ class DaliCommand:
 
     @classmethod
     async def parse(cls, msg):
-        try:
-            topic = msg[0].split('/')
-            if topic[1] == 'set_level':
-                level =  int(topic[2])
-                if 0 <= level < 64:
-                    await cls.set_level(level)
-            elif topic[1] == 'set_level_grp':
-                grp = int(topic[2])
-                if 0 <= grp < 64:
-                    await cls.set_level(grp)
-        except Exceptions:
-            pass
+        def is_address(a):
+            return 0 <= a < 64
+
+        def is_grp(g):
+            return 0 <= g < 15
+
+        topic = msg[0].split(b'/')
+
+        if topic[1] != cls.dali.topic_index:
+            return
+
+        if topic[2] == b'set_level' and len(msg[1]) == 1 and msg[1] != b'\254':
+            address =  int(topic[3])
+            if is_address(address):
+                await cls.set_level(address, msg[1])
+
 
     @classmethod
-    async def set_level(cls, level):
-        await cls.dali.send_without_answer(level)
+    async def set_level(cls, address, level):
+        # await cls.dali.send_without_answer(level)
+        print('set_level', address, level)
 
 
 
